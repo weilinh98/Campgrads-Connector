@@ -3,6 +3,8 @@ const router = express.Router();
 const { check, validationResult } = require("express-validator");
 const gravatar = require("gravatar");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const config = require("config");
 const User = require("../../models/User");
 //@route POST api/users
 //@desc Register user
@@ -38,7 +40,7 @@ router.post(
           .json({ errors: [{ msg: "user already exists" }] });
       }
       // Get user gravatar//this runs when user is not found//pass user's email into and give out an url
-      const avatar = gravatar.url(email, {
+      const avatar = await gravatar.url(email, {
         s: "200",
         r: "pg", //rating
         d: "mm" //default gives a default image//404 file not found
@@ -58,7 +60,24 @@ router.post(
       //anything that returns a promise we make sure to put await before
       await user.save();
       //Return jsonwebtoken
-      res.send("User registered");
+      const payload = {
+        user: {
+          id: user.id //don't have to do _id which is displayed in the mondodb database, moogoose take care of that
+        }
+      };
+
+      jwt.sign(
+        payload,
+        config.get("jwtSecret"),
+        { expiresIn: 360000 },
+        (err, token) => {
+          if (err) {
+            throw err;
+          } else {
+            res.json({ token }); //send that token back and send to correct route
+          }
+        }
+      );
     } catch (err) {
       console.error(err.message);
       res.status(500).send("server error");
