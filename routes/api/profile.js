@@ -344,6 +344,8 @@ router.get("/github/:username", (req, res) => {
       }
       res.json(JSON.parse(body));
     });
-  } catch (err) {}
+  } catch (err) {
+    console.error(err.message);
+  }
 });
 module.exports = router;
